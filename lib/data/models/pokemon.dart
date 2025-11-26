@@ -1,8 +1,11 @@
-/// Pokemon model for list display
+/// Pokemon 列表项数据模型
+///
+/// 对应 Android 中的 data class，用于列表展示
+/// 类似 Jetpack Compose 中的数据类，但 Dart 需要手动实现构造函数
 class Pokemon {
-  final int page;
-  final String name;
-  final String url;
+  final int page;       // 所属页码，用于分页加载
+  final String name;    // 宝可梦名称（小写）
+  final String url;     // API 详情接口地址
 
   Pokemon({
     required this.page,
@@ -10,24 +13,31 @@ class Pokemon {
     required this.url,
   });
 
-  /// Get Pokemon ID from URL
+  /// 从 URL 中解析出宝可梦 ID
+  /// 例如: https://pokeapi.co/api/v2/pokemon/25/ -> 25
+  /// 类似 Kotlin 的计算属性 val id: Int get() = ...
   int get id {
     final uri = Uri.parse(url);
     final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     return int.parse(segments.last);
   }
 
-  /// Get display name with first letter capitalized
+  /// 获取首字母大写的显示名称
+  /// 例如: "pikachu" -> "Pikachu"
   String get displayName {
     if (name.isEmpty) return name;
     return name[0].toUpperCase() + name.substring(1);
   }
 
-  /// Get official artwork image URL
+  /// 获取官方高清图片 URL
+  /// 使用 GitHub 上的 PokeAPI 图片资源
   String get imageUrl {
     return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/$id.png';
   }
 
+  /// 从 API JSON 响应创建对象
+  /// Dart 使用 factory 构造函数实现类似 Gson/Moshi 的反序列化
+  /// 对应 Android 中的 @Serializable 或 @JsonClass
   factory Pokemon.fromJson(Map<String, dynamic> json, int page) {
     return Pokemon(
       page: page,
@@ -36,6 +46,7 @@ class Pokemon {
     );
   }
 
+  /// 转换为 JSON (用于缓存或调试)
   Map<String, dynamic> toJson() {
     return {
       'page': page,
@@ -44,6 +55,8 @@ class Pokemon {
     };
   }
 
+  /// 从数据库 Map 创建对象
+  /// SQLite 返回的是 Map<String, dynamic>
   factory Pokemon.fromDb(Map<String, dynamic> map) {
     return Pokemon(
       page: map['page'] as int,
@@ -52,6 +65,7 @@ class Pokemon {
     );
   }
 
+  /// 转换为数据库 Map（用于存储）
   Map<String, dynamic> toDb() {
     return {
       'page': page,
@@ -61,12 +75,15 @@ class Pokemon {
   }
 }
 
-/// Response model for Pokemon list API
+/// Pokemon 列表 API 响应模型
+///
+/// 对应 PokeAPI 的分页响应结构
+/// 类似 Android Paging 库中的 PagingData
 class PokemonListResponse {
-  final int count;
-  final String? next;
-  final String? previous;
-  final List<Pokemon> results;
+  final int count;              // 总数量
+  final String? next;           // 下一页 URL (可能为 null)
+  final String? previous;       // 上一页 URL (可能为 null)
+  final List<Pokemon> results;  // 当前页数据列表
 
   PokemonListResponse({
     required this.count,

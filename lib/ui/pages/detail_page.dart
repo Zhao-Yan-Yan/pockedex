@@ -7,25 +7,52 @@ import '../../data/models/pokemon_info.dart';
 import '../../providers/pokemon_providers.dart';
 import '../widgets/stat_bar.dart';
 
+/// Pokemon 详情页
+///
+/// 功能:
+/// 1. 展示 Pokemon 详细信息（图片、名称、ID、类型）
+/// 2. 展示物理信息（身高、体重）
+/// 3. 展示能力值（HP、攻击、防御等）带动画
+/// 4. 可折叠 AppBar（SliverAppBar）
+/// 5. Hero 动画支持（共享元素转场）
+///
+/// ConsumerWidget 是 Riverpod 的无状态组件
+/// 类似 Compose 中监听 ViewModel 的 @Composable 函数
+///
+/// 对比:
+/// - ConsumerWidget ≈ @Composable + collectAsState()
+/// - 不需要管理内部状态，只监听外部 Provider
 class DetailPage extends ConsumerWidget {
-  final Pokemon pokemon;
+  final Pokemon pokemon;  // 从列表页传递的基础信息
 
   const DetailPage({
     super.key,
     required this.pokemon,
   });
 
+  /// 构建 UI
+  ///
+  /// WidgetRef 用于访问 Riverpod Provider
+  /// 类似 Compose 中函数参数直接访问 ViewModel
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 监听详情数据的异步加载状态
+    // pokemonInfoProvider 是 FutureProvider
+    // ref.watch() 会自动处理 loading/data/error 三种状态
     final pokemonInfoAsync = ref.watch(pokemonInfoProvider(pokemon.name));
+
+    // 获取缓存的主色调（从列表页提取的颜色）
     final cachedColor = ref.watch(pokemonColorProvider(pokemon.id));
     final backgroundColor = cachedColor ?? Colors.grey.shade300;
 
     return Scaffold(
+      // pokemonInfoAsync.when() 处理异步状态
+      // 类似 Compose 中的 when (uiState) { ... }
+      // 或 Android 的 sealed class + when 表达式
       body: pokemonInfoAsync.when(
-        data: (info) => _buildContent(context, info, backgroundColor),
-        loading: () => _buildLoadingContent(context, backgroundColor),
-        error: (error, stack) => _buildErrorContent(context, error.toString()),
+        data: (info) => _buildContent(context, info, backgroundColor),      // 加载成功
+        loading: () => _buildLoadingContent(context, backgroundColor),      // 加载中
+        error: (error, stack) => _buildErrorContent(context, error.toString()), // 加载失败
       ),
     );
   }

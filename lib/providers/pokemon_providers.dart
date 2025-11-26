@@ -5,19 +5,45 @@ import '../data/models/pokemon.dart';
 import '../data/models/pokemon_info.dart';
 import '../data/repository/pokemon_repository.dart';
 
-// Repository provider
+// ==================== Riverpod 状态管理 ====================
+//
+// Riverpod 是 Flutter 推荐的状态管理库（Provider 的升级版）
+// 对应 Android 中的 ViewModel + LiveData/StateFlow
+//
+// 核心概念对比:
+// - Provider ≈ Hilt/Dagger 依赖注入
+// - StateNotifier ≈ ViewModel
+// - State ≈ UiState data class
+// - ref.watch() ≈ collectAsState() (Compose中)
+
+/// Repository Provider（单例）
+///
+/// 提供全局唯一的 Repository 实例
+/// 类似 Hilt 中的 @Singleton + @Provides
 final pokemonRepositoryProvider = Provider<PokemonRepository>((ref) {
   return PokemonRepository();
 });
 
-// Pokemon list state
+// ==================== Pokemon 列表状态管理 ====================
+
+/// Pokemon 列表的 UI 状态
+///
+/// 类似 Android ViewModel 中的 UiState data class
+/// 包含列表数据、加载状态、错误信息等
+///
+/// 对应 Compose 中常见的模式:
+/// data class PokemonListUiState(
+///   val pokemonList: List<Pokemon> = emptyList(),
+///   val isLoading: Boolean = false,
+///   ...
+/// )
 class PokemonListState {
-  final List<Pokemon> pokemonList;
-  final bool isLoading;
-  final bool isLoadingMore;
-  final String? error;
-  final int currentPage;
-  final bool hasMore;
+  final List<Pokemon> pokemonList;  // Pokemon 列表数据
+  final bool isLoading;             // 首次加载状态
+  final bool isLoadingMore;         // 加载更多状态（底部加载）
+  final String? error;              // 错误信息
+  final int currentPage;            // 当前页码
+  final bool hasMore;               // 是否还有更多数据
 
   const PokemonListState({
     this.pokemonList = const [],
@@ -28,6 +54,10 @@ class PokemonListState {
     this.hasMore = true,
   });
 
+  /// 创建新状态（不可变数据）
+  ///
+  /// Dart 中的 immutable 数据模式
+  /// 类似 Kotlin 的 data class.copy() 方法
   PokemonListState copyWith({
     List<Pokemon>? pokemonList,
     bool? isLoading,
@@ -47,14 +77,33 @@ class PokemonListState {
   }
 }
 
-// Pokemon list notifier
+/// Pokemon 列表的状态管理器
+///
+/// 类似 Android ViewModel，负责:
+/// 1. 管理 UI 状态
+/// 2. 处理业务逻辑（调用 Repository）
+/// 3. 更新状态并通知 UI 刷新
+///
+/// StateNotifier<State> ≈ ViewModel with StateFlow<UiState>
 class PokemonListNotifier extends StateNotifier<PokemonListState> {
   final PokemonRepository _repository;
 
+  /// 构造函数，初始化时自动加载第一页数据
+  ///
+  /// 类似 ViewModel 的 init {} 块
   PokemonListNotifier(this._repository) : super(const PokemonListState()) {
     loadInitial();
   }
 
+  /// 加载初始数据（第一页）
+  ///
+  /// 类似 ViewModel 中的:
+  /// fun loadInitial() {
+  ///   viewModelScope.launch {
+  ///     _uiState.value = _uiState.value.copy(isLoading = true)
+  ///     ...
+  ///   }
+  /// }
   Future<void> loadInitial() async {
     if (state.isLoading) return;
 
@@ -76,8 +125,12 @@ class PokemonListNotifier extends StateNotifier<PokemonListState> {
     }
   }
 
+  /// 加载更多数据（分页）
+  ///
+  /// 当用户滚动到列表底部时调用
+  /// 类似 Android Paging 库的自动加载
   Future<void> loadMore() async {
-    if (state.isLoadingMore || !state.hasMore) return;
+    if (state.isLoadingMore || !state.hasMore) return;  // 防止重复加载
 
     state = state.copyWith(isLoadingMore: true);
 
@@ -85,11 +138,12 @@ class PokemonListNotifier extends StateNotifier<PokemonListState> {
       final nextPage = state.currentPage + 1;
       final newPokemon = await _repository.fetchPokemonList(page: nextPage);
 
+      // 追加新数据到已有列表
       state = state.copyWith(
         pokemonList: [...state.pokemonList, ...newPokemon],
         isLoadingMore: false,
         currentPage: nextPage,
-        hasMore: newPokemon.length >= 20,
+        hasMore: newPokemon.length >= 20,  // 如果返回数据少于20条，说明没有更多了
       );
     } catch (e) {
       state = state.copyWith(
@@ -99,6 +153,10 @@ class PokemonListNotifier extends StateNotifier<PokemonListState> {
     }
   }
 
+  /// 下拉刷新
+  ///
+  /// 清空现有数据，重新加载第一页（强制刷新）
+  /// 类似 SwipeRefreshLayout 的刷新逻辑
   Future<void> refresh() async {
     state = state.copyWith(
       isLoading: true,
@@ -127,13 +185,24 @@ class PokemonListNotifier extends StateNotifier<PokemonListState> {
   }
 }
 
+/// Pokemon 列表 Provider（全局状态）
+///
+/// UI 通过 ref.watch(pokemonListProvider) 监听状态变化
+/// 类似 Compose 中的:
+/// val uiState by viewModel.uiState.collectAsState()
+///
+/// StateNotifierProvider ≈ viewModel() in Compose
 final pokemonListProvider =
     StateNotifierProvider<PokemonListNotifier, PokemonListState>((ref) {
-  final repository = ref.watch(pokemonRepositoryProvider);
+  final repository = ref.watch(pokemonRepositoryProvider);  // 依赖注入
   return PokemonListNotifier(repository);
 });
 
-// Pokemon info state
+// ==================== Pokemon 详情状态管理 ====================
+
+/// Pokemon 详情的 UI 状态（未使用，仅作示例）
+///
+/// 本项目使用 FutureProvider 替代了 StateNotifier
 class PokemonInfoState {
   final PokemonInfo? info;
   final bool isLoading;
@@ -158,7 +227,17 @@ class PokemonInfoState {
   }
 }
 
-// Pokemon info family provider
+/// Pokemon 详情 Provider（Family Pattern）
+///
+/// FutureProvider.family 用于根据参数创建不同的 Provider
+/// 每个不同的 name 会创建独立的 Provider 实例并缓存结果
+///
+/// 类似 Android 中:
+/// val pokemonInfo = remember(name) {
+///   viewModel.getPokemonInfo(name)
+/// }.collectAsState()
+///
+/// [name] Pokemon 名称作为参数
 final pokemonInfoProvider = FutureProvider.family<PokemonInfo, String>(
   (ref, name) async {
     final repository = ref.watch(pokemonRepositoryProvider);
@@ -166,6 +245,12 @@ final pokemonInfoProvider = FutureProvider.family<PokemonInfo, String>(
   },
 );
 
-// Color cache for Pokemon cards
+/// Pokemon 卡片颜色缓存 Provider
+///
+/// 用于缓存从图片提取的主色调，避免重复计算
+/// StateProvider.family 为每个 pokemonId 创建独立的状态
+///
+/// 类似 Compose 中的:
+/// val colors = remember(pokemonId) { mutableStateOf<Color?>(null) }
 final pokemonColorProvider =
     StateProvider.family<Color?, int>((ref, pokemonId) => null);
