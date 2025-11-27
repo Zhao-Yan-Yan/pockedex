@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/models/pokemon.dart';
-import '../../providers/pokemon_providers.dart';
+import '../../../domain/entities/pokemon_entity.dart';
+import '../../pokemon_providers.dart';
 import '../widgets/pokemon_card.dart';
 import 'detail_page.dart';
 
@@ -73,7 +73,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   ///
   /// 使用 PageRouteBuilder 自定义页面转场动画
   /// 类似 Android 的 ActivityOptionsCompat 或 Compose Navigation
-  void _navigateToDetail(Pokemon pokemon) {
+  void _navigateToDetail(PokemonEntity pokemon) {
     Navigator.of(context).push(
       PageRouteBuilder(
         // 转场动画时长

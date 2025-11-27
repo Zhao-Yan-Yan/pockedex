@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/models/pokemon.dart';
-import '../../data/models/pokemon_info.dart';
-import '../../providers/pokemon_providers.dart';
+import '../../../domain/entities/pokemon_entity.dart';
+import '../../../domain/entities/pokemon_detail_entity.dart';
+import '../../pokemon_providers.dart';
 import '../widgets/stat_bar.dart';
 
 /// Pokemon 详情页
@@ -23,7 +23,7 @@ import '../widgets/stat_bar.dart';
 /// - ConsumerWidget ≈ @Composable + collectAsState()
 /// - 不需要管理内部状态，只监听外部 Provider
 class DetailPage extends ConsumerWidget {
-  final Pokemon pokemon;  // 从列表页传递的基础信息
+  final PokemonEntity pokemon;  // 从列表页传递的基础信息 (Domain Entity)
 
   const DetailPage({
     super.key,
@@ -58,7 +58,7 @@ class DetailPage extends ConsumerWidget {
   }
 
   Widget _buildContent(
-      BuildContext context, PokemonInfo info, Color backgroundColor) {
+      BuildContext context, PokemonDetailEntity info, Color backgroundColor) {
     final lightColor = Color.lerp(backgroundColor, Colors.white, 0.3)!;
 
     return CustomScrollView(
@@ -131,7 +131,7 @@ class DetailPage extends ConsumerWidget {
   }
 
   Widget _buildAppBar(
-      BuildContext context, PokemonInfo info, Color backgroundColor) {
+      BuildContext context, PokemonDetailEntity info, Color backgroundColor) {
     return SliverAppBar(
       expandedHeight: 280,
       pinned: true,
@@ -175,7 +175,7 @@ class DetailPage extends ConsumerWidget {
   }
 
   Widget _buildDetails(
-      BuildContext context, PokemonInfo info, Color primaryColor) {
+      BuildContext context, PokemonDetailEntity info, Color primaryColor) {
     return Container(
       decoration: const BoxDecoration(
         color: Colors.white,

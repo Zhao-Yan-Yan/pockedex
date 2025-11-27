@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:palette_generator/palette_generator.dart';
 
-import '../../data/models/pokemon.dart';
-import '../../providers/pokemon_providers.dart';
+import '../../../domain/entities/pokemon_entity.dart';
+import '../../pokemon_providers.dart';
 
 /// Pokemon 卡片组件（网格列表项）
 ///
@@ -25,7 +25,7 @@ import '../../providers/pokemon_providers.dart';
 ///   Card(modifier = Modifier.clickable(onClick)) { ... }
 /// }
 class PokemonCard extends ConsumerStatefulWidget {
-  final Pokemon pokemon;        // Pokemon 数据
+  final PokemonEntity pokemon;  // Pokemon 数据 (Domain Entity)
   final VoidCallback onTap;     // 点击回调
 
   const PokemonCard({

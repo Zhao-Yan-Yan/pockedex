@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'ui/pages/home_page.dart';
+import 'presentation/ui/pages/home_page.dart';
 
 /// 应用入口函数
 ///
