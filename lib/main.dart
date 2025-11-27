@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'providers/theme_provider.dart';
 import 'ui/pages/home_page.dart';
 
 /// 应用入口函数
@@ -18,13 +19,12 @@ void main() {
 
 /// 宝可梦图鉴应用根组件
 ///
-/// StatelessWidget 是无状态组件
-/// 类似 Compose 中不使用 remember 的 @Composable 函数
+/// ConsumerWidget 结合了 Riverpod 状态监听功能
+/// 用于监听全局主题状态变化并应用主题
 ///
 /// 对比:
-/// - StatelessWidget ≈ @Composable (无状态)
-/// - StatefulWidget ≈ @Composable + remember (有状态)
-class PokedexApp extends StatelessWidget {
+/// - ConsumerWidget ≈ @Composable + collectAsState()
+class PokedexApp extends ConsumerWidget {
   const PokedexApp({super.key});
 
   /// 构建 UI
@@ -32,28 +32,26 @@ class PokedexApp extends StatelessWidget {
   /// MaterialApp 是 Flutter 的根 Widget
   /// 类似 Android 的 Application + Theme 配置
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 监听主题状态变化
+    // 当用户切换主题时，整个应用会自动重建并应用新主题
+    final themeSettings = ref.watch(themeProvider);
+
     return MaterialApp(
       title: 'Pokedex',
       debugShowCheckedModeBanner: false,  // 隐藏右上角的 DEBUG 标签
 
-      // 主题配置（Material Design 3）
-      // 类似 Android 的 themes.xml 或 Compose 的 MaterialTheme
-      theme: ThemeData(
-        // ColorScheme 类似 Android 的 color system
-        // Material You 动态颜色方案
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFE53935),  // 种子颜色（红色）
-          brightness: Brightness.light,         // 亮色主题
-        ),
-        useMaterial3: true,  // 使用 Material Design 3
+      // 应用亮色主题
+      // 从 ThemeSettings 获取配置好的主题
+      theme: themeSettings.getLightTheme(),
 
-        // AppBar 主题配置
-        appBarTheme: const AppBarTheme(
-          elevation: 0,        // 无阴影（扁平化设计）
-          centerTitle: false,  // 标题左对齐
-        ),
-      ),
+      // 应用暗色主题
+      // Material Design 3 支持深色模式
+      darkTheme: themeSettings.getDarkTheme(),
+
+      // 主题模式（浅色/深色/跟随系统）
+      // 类似 Android 的 AppCompatDelegate.setDefaultNightMode()
+      themeMode: themeSettings.themeMode,
 
       // 首页
       // 类似 Android 的 setContentView() 或 Compose 的根 Composable

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/pokemon.dart';
 import '../../providers/pokemon_providers.dart';
 import '../widgets/pokemon_card.dart';
+import '../widgets/theme_selector.dart';
 import 'detail_page.dart';
 
 /// 首页：Pokemon 列表页
@@ -102,6 +103,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     // 类似 Compose 的 collectAsState()
     final state = ref.watch(pokemonListProvider);
 
+    // 获取主题主色调,用于背景渐变
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final backgroundColor = Theme.of(context).colorScheme.surface;
+
     // Scaffold 是 Material Design 的页面骨架
     // 提供 AppBar、Body、FloatingActionButton 等标准布局
     // 类似 Android 的 CoordinatorLayout + AppBarLayout
@@ -117,10 +122,52 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ),
         centerTitle: false,  // 标题左对齐
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: Colors.transparent,  // 透明背景,让渐变效果穿透
         elevation: 0,  // 无阴影
+        // 右上角主题切换按钮
+        // 类似 Android 的 Menu 或 Compose TopAppBar actions
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.palette_outlined),
+            tooltip: '主题设置',
+            onPressed: () {
+              // 显示主题选择器弹窗
+              showThemeSelector(context);
+            },
+          ),
+        ],
       ),
-      body: _buildBody(state),
+      // extendBodyBehindAppBar: 让 body 延伸到 AppBar 后面
+      // 使背景渐变效果能覆盖整个屏幕
+      extendBodyBehindAppBar: true,
+      // 使用 Container 包裹 body,添加渐变背景
+      // 类似 Android 的 GradientDrawable 或 Compose Brush.verticalGradient
+      body: Container(
+        // 线性渐变背景
+        // 从顶部主题色淡化到底部背景色
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              // 顶部:主题色的淡化版本
+              primaryColor.withValues(alpha: 0.08),
+              // 中部:更淡的过渡
+              primaryColor.withValues(alpha: 0.03),
+              // 底部:纯背景色
+              backgroundColor,
+            ],
+            stops: const [0.0, 0.3, 1.0],  // 渐变停止点
+          ),
+        ),
+        // SafeArea 确保内容不被系统 UI(如状态栏)遮挡
+        // 类似 Android 的 WindowInsets
+        // bottom: false 让内容延伸到底部导航栏后面,实现沉浸式效果
+        child: SafeArea(
+          bottom: false,  // 底部不留安全区域,实现沉浸式
+          child: _buildBody(state),
+        ),
+      ),
     );
   }
 
@@ -194,6 +241,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
             ),
+          // 底部安全区域占位
+          // 确保最后一行内容不被底部导航栏遮挡
+          // 类似 Android 的 bottomNavigationBarHeight padding
+          SliverPadding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).padding.bottom + 16,
+            ),
+          ),
         ],
       ),
     );

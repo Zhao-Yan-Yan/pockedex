@@ -61,13 +61,17 @@ class DetailPage extends ConsumerWidget {
       BuildContext context, PokemonInfo info, Color backgroundColor) {
     final lightColor = Color.lerp(backgroundColor, Colors.white, 0.3)!;
 
-    return CustomScrollView(
-      slivers: [
-        _buildAppBar(context, info, lightColor),
-        SliverToBoxAdapter(
-          child: _buildDetails(context, info, backgroundColor),
-        ),
-      ],
+    return Container(
+      // 设置背景色,避免圆角后露出黑色
+      color: lightColor,
+      child: CustomScrollView(
+        slivers: [
+          _buildAppBar(context, info, lightColor),
+          SliverToBoxAdapter(
+            child: _buildDetails(context, info, backgroundColor),
+          ),
+        ],
+      ),
     );
   }
 
@@ -176,10 +180,13 @@ class DetailPage extends ConsumerWidget {
 
   Widget _buildDetails(
       BuildContext context, PokemonInfo info, Color primaryColor) {
+    // 使用主题颜色而非硬编码白色,支持深色模式
+    final cardColor = Theme.of(context).colorScheme.surface;
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(24),
           topRight: Radius.circular(24),
         ),
