@@ -51,15 +51,10 @@ lib/
 
 ## 应用截图
 
-<div align="center">
-  <img src="images/Screenshot_1765446342.png" width="250" alt="宝可梦列表" />
-  <img src="images/Screenshot_1765446347.png" width="250" alt="详情页 - 基础信息" />
-  <img src="images/Screenshot_1765446354.png" width="250" alt="详情页 - 进化链与栖息地" />
-</div>
-
-<div align="center">
-  <p><em>左：宝可梦列表页 | 中：详情页（基础信息、能力值）| 右：详情页（进化链、技能、栖息地）</em></p>
-</div>
+| 宝可梦列表页 | 详情页 - 基础信息 | 详情页 - 进化链与栖息地 |
+|:---:|:---:|:---:|
+| ![宝可梦列表页](images/Screenshot_1765446342.png) | ![详情页-基础信息](images/Screenshot_1765446347.png) | ![详情页-进化链与栖息地](images/Screenshot_1765446354.png) |
+| 网格布局、无限滚动、收藏功能 | 类型、身高、体重、能力值进度条 | 进化链可视化、技能列表、栖息地 |
 
 ## 开始使用
 
