@@ -7,6 +7,8 @@ import '../../data/models/pokemon_info.dart';
 import '../../providers/pokemon_providers.dart';
 import '../widgets/stat_bar.dart';
 import '../widgets/moves_list.dart';
+import '../widgets/evolution_chain_widget.dart';
+import '../widgets/habitats_widget.dart';
 
 /// Pokemon 详情页
 ///
@@ -69,7 +71,11 @@ class DetailPage extends ConsumerWidget {
         slivers: [
           _buildAppBar(context, info, lightColor),
           SliverToBoxAdapter(
-            child: _buildDetails(context, info, backgroundColor),
+            child: Consumer(
+              builder: (context, ref, child) {
+                return _buildDetails(context, ref, info, backgroundColor);
+              },
+            ),
           ),
         ],
       ),
@@ -200,9 +206,13 @@ class DetailPage extends ConsumerWidget {
   }
 
   Widget _buildDetails(
-      BuildContext context, PokemonInfo info, Color primaryColor) {
+      BuildContext context, WidgetRef ref, PokemonInfo info, Color primaryColor) {
     // 使用主题颜色而非硬编码白色,支持深色模式
     final cardColor = Theme.of(context).colorScheme.surface;
+
+    // 获取进化链和栖息地数据
+    final evolutionChainAsync = ref.watch(evolutionChainProvider(pokemon.id));
+    final encountersAsync = ref.watch(pokemonEncountersProvider(pokemon.id));
 
     return Container(
       decoration: BoxDecoration(
@@ -307,12 +317,54 @@ class DetailPage extends ConsumerWidget {
                 color: primaryColor,
               );
             }),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: 32),
+
+            // Evolution Chain
+            evolutionChainAsync.when(
+              data: (chain) {
+                if (chain != null) {
+                  return Column(
+                    children: [
+                      EvolutionChainWidget(
+                        evolutionChain: chain,
+                        primaryColor: primaryColor,
+                      ),
+                      const SizedBox(height: 32),
+                    ],
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+
             // Moves List
             MovesList(
               pokemonInfo: info,
               primaryColor: primaryColor,
             ),
+
+            const SizedBox(height: 32),
+
+            // Habitats / Encounters
+            encountersAsync.when(
+              data: (encounters) {
+                return HabitatsWidget(
+                  encounters: encounters,
+                  primaryColor: primaryColor,
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (_, __) => const SizedBox.shrink(),
+            ),
+
             const SizedBox(height: 32),
           ],
         ),

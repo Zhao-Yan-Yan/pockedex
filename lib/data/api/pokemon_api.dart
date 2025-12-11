@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 
 import '../models/pokemon.dart';
 import '../models/pokemon_info.dart';
+import '../models/evolution_chain.dart';
+import '../models/pokemon_encounter.dart';
 
 /// Pokemon API 网络请求层
 ///
@@ -70,6 +72,56 @@ class PokemonApi {
       print('Level-up moves count: ${pokemonInfo.levelUpMoves.length}');
 
       return pokemonInfo;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// 获取 Pokemon 物种信息（包含进化链 URL）
+  ///
+  /// [id] Pokemon ID
+  /// 返回物种信息，主要用于获取进化链 URL
+  ///
+  /// 类似 Retrofit 的 @GET("/pokemon-species/{id}")
+  Future<String?> fetchSpeciesEvolutionChainUrl(int id) async {
+    try {
+      final response = await _dio.get('/pokemon-species/$id');
+      final data = response.data as Map<String, dynamic>;
+      final evolutionChain = data['evolution_chain'] as Map<String, dynamic>?;
+      return evolutionChain?['url'] as String?;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// 根据进化链 ID 获取进化链详情
+  ///
+  /// [chainId] 进化链 ID
+  /// 返回完整的进化链信息
+  ///
+  /// 类似 Retrofit 的 @GET("/evolution-chain/{id}")
+  Future<EvolutionChain> fetchEvolutionChain(int chainId) async {
+    try {
+      final response = await _dio.get('/evolution-chain/$chainId');
+      return EvolutionChain.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  /// 获取 Pokemon 的遭遇地点列表
+  ///
+  /// [id] Pokemon ID
+  /// 返回该 Pokemon 可以遇到的地点列表
+  ///
+  /// 类似 Retrofit 的 @GET("/pokemon/{id}/encounters")
+  Future<List<LocationEncounter>> fetchPokemonEncounters(int id) async {
+    try {
+      final response = await _dio.get('/pokemon/$id/encounters');
+      final data = response.data as List;
+      return data
+          .map((e) => LocationEncounter.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       throw _handleError(e);
     }

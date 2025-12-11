@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/models/pokemon.dart';
 import '../data/models/pokemon_info.dart';
+import '../data/models/evolution_chain.dart';
+import '../data/models/pokemon_encounter.dart';
 import '../data/repository/pokemon_repository.dart';
 
 // ==================== Riverpod 状态管理 ====================
@@ -370,3 +372,34 @@ final favoriteProvider =
   final repository = ref.watch(pokemonRepositoryProvider);
   return FavoriteNotifier(repository);
 });
+
+// ==================== 进化链状态管理 ====================
+
+/// Pokemon 进化链 Provider（Family Pattern）
+///
+/// FutureProvider.family 用于根据 Pokemon ID 获取进化链
+/// 每个不同的 ID 会创建独立的 Provider 实例并缓存结果
+///
+/// [pokemonId] Pokemon ID 作为参数
+final evolutionChainProvider = FutureProvider.family<EvolutionChain?, int>(
+  (ref, pokemonId) async {
+    final repository = ref.watch(pokemonRepositoryProvider);
+    return repository.fetchEvolutionChain(pokemonId);
+  },
+);
+
+// ==================== 栖息地状态管理 ====================
+
+/// Pokemon 栖息地/遭遇地点 Provider（Family Pattern）
+///
+/// FutureProvider.family 用于根据 Pokemon ID 获取遭遇地点列表
+/// 每个不同的 ID 会创建独立的 Provider 实例并缓存结果
+///
+/// [pokemonId] Pokemon ID 作为参数
+final pokemonEncountersProvider =
+    FutureProvider.family<List<LocationEncounter>, int>(
+  (ref, pokemonId) async {
+    final repository = ref.watch(pokemonRepositoryProvider);
+    return repository.fetchPokemonEncounters(pokemonId);
+  },
+);

@@ -2,6 +2,8 @@ import '../api/pokemon_api.dart';
 import '../database/pokemon_database.dart';
 import '../models/pokemon.dart';
 import '../models/pokemon_info.dart';
+import '../models/evolution_chain.dart';
+import '../models/pokemon_encounter.dart';
 
 /// Pokemon 数据仓库层
 ///
@@ -147,5 +149,45 @@ class PokemonRepository {
         isFavorite: favoriteIdsSet.contains(pokemon.id),
       );
     }).toList();
+  }
+
+  // ==================== 进化链功能 ====================
+
+  /// 获取 Pokemon 的进化链
+  ///
+  /// [pokemonId] Pokemon ID
+  /// 返回完整的进化链信息，如果没有进化链则返回 null
+  Future<EvolutionChain?> fetchEvolutionChain(int pokemonId) async {
+    try {
+      // 第一步：获取物种信息中的进化链 URL
+      final evolutionChainUrl = await _api.fetchSpeciesEvolutionChainUrl(pokemonId);
+      if (evolutionChainUrl == null) return null;
+
+      // 第二步：从 URL 中提取进化链 ID
+      final uri = Uri.parse(evolutionChainUrl);
+      final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+      final chainId = int.parse(segments.last);
+
+      // 第三步：获取进化链详情
+      return await _api.fetchEvolutionChain(chainId);
+    } catch (e) {
+      print('Error fetching evolution chain: $e');
+      return null;
+    }
+  }
+
+  // ==================== 遭遇地点功能 ====================
+
+  /// 获取 Pokemon 的遭遇地点列表
+  ///
+  /// [pokemonId] Pokemon ID
+  /// 返回该 Pokemon 可以遇到的地点列表
+  Future<List<LocationEncounter>> fetchPokemonEncounters(int pokemonId) async {
+    try {
+      return await _api.fetchPokemonEncounters(pokemonId);
+    } catch (e) {
+      print('Error fetching Pokemon encounters: $e');
+      return [];
+    }
   }
 }
