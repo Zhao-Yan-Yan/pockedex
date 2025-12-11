@@ -6,6 +6,7 @@ import '../../data/models/pokemon.dart';
 import '../../data/models/pokemon_info.dart';
 import '../../providers/pokemon_providers.dart';
 import '../widgets/stat_bar.dart';
+import '../widgets/moves_list.dart';
 
 /// Pokemon 详情页
 ///
@@ -144,6 +145,26 @@ class DetailPage extends ConsumerWidget {
         icon: const Icon(Icons.arrow_back, color: Colors.black87),
         onPressed: () => Navigator.of(context).pop(),
       ),
+      actions: [
+        // 收藏按钮
+        Consumer(
+          builder: (context, ref, child) {
+            final favoriteNotifier = ref.watch(favoriteProvider.notifier);
+            final isFavorite = ref.watch(favoriteProvider
+                .select((state) => state.favoriteIds.contains(pokemon.id)));
+
+            return IconButton(
+              icon: Icon(
+                isFavorite ? Icons.favorite : Icons.favorite_border,
+                color: isFavorite ? Colors.red : Colors.black87,
+              ),
+              onPressed: () {
+                favoriteNotifier.toggleFavorite(pokemon.id, pokemon.name);
+              },
+            );
+          },
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
           decoration: BoxDecoration(
@@ -286,6 +307,12 @@ class DetailPage extends ConsumerWidget {
                 color: primaryColor,
               );
             }),
+            const SizedBox(height: 16),
+            // Moves List
+            MovesList(
+              pokemonInfo: info,
+              primaryColor: primaryColor,
+            ),
             const SizedBox(height: 32),
           ],
         ),

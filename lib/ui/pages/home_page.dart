@@ -6,6 +6,7 @@ import '../../providers/pokemon_providers.dart';
 import '../widgets/pokemon_card.dart';
 import '../widgets/theme_selector.dart';
 import 'detail_page.dart';
+import 'favorites_page.dart';
 
 /// 首页：Pokemon 列表页
 ///
@@ -124,9 +125,59 @@ class _HomePageState extends ConsumerState<HomePage> {
         centerTitle: false,  // 标题左对齐
         backgroundColor: Colors.transparent,  // 透明背景,让渐变效果穿透
         elevation: 0,  // 无阴影
-        // 右上角主题切换按钮
+        // 右上角按钮：收藏和主题切换
         // 类似 Android 的 Menu 或 Compose TopAppBar actions
         actions: [
+          // 收藏按钮（带徽章显示收藏数量）
+          Consumer(
+            builder: (context, ref, child) {
+              final favoriteCount = ref.watch(
+                favoriteProvider.select((state) => state.favorites.length),
+              );
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.favorite),
+                    tooltip: 'My Favorites',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const FavoritesPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  // 收藏数量徽章
+                  if (favoriteCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          favoriteCount > 99 ? '99+' : '$favoriteCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.palette_outlined),
             tooltip: '主题设置',

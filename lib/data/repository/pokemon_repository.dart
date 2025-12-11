@@ -88,4 +88,64 @@ class PokemonRepository {
 
     return info;
   }
+
+  // ==================== 收藏功能 ====================
+
+  /// 添加到收藏
+  ///
+  /// [pokemonId] Pokemon ID
+  /// [pokemonName] Pokemon 名称
+  Future<void> addToFavorites(int pokemonId, String pokemonName) async {
+    await _database.addToFavorites(pokemonId, pokemonName);
+  }
+
+  /// 从收藏中移除
+  ///
+  /// [pokemonId] Pokemon ID
+  Future<void> removeFromFavorites(int pokemonId) async {
+    await _database.removeFromFavorites(pokemonId);
+  }
+
+  /// 切换收藏状态
+  ///
+  /// 如果已收藏则移除，未收藏则添加
+  /// [pokemonId] Pokemon ID
+  /// [pokemonName] Pokemon 名称
+  Future<void> toggleFavorite(int pokemonId, String pokemonName) async {
+    final isFavorite = await _database.isFavorite(pokemonId);
+    if (isFavorite) {
+      await _database.removeFromFavorites(pokemonId);
+    } else {
+      await _database.addToFavorites(pokemonId, pokemonName);
+    }
+  }
+
+  /// 检查是否已收藏
+  ///
+  /// [pokemonId] Pokemon ID
+  Future<bool> isFavorite(int pokemonId) async {
+    return await _database.isFavorite(pokemonId);
+  }
+
+  /// 获取所有收藏的 Pokemon ID 列表
+  Future<List<int>> getFavoritePokemonIds() async {
+    return await _database.getFavoritePokemonIds();
+  }
+
+  /// 获取所有收藏的 Pokemon 列表（带完整信息）
+  Future<List<Pokemon>> getFavoritePokemonList() async {
+    // 获取收藏列表
+    final favorites = await _database.getFavoritePokemonList();
+
+    // 获取所有收藏的 ID
+    final favoriteIds = await _database.getFavoritePokemonIds();
+    final favoriteIdsSet = favoriteIds.toSet();
+
+    // 标记收藏状态
+    return favorites.map((pokemon) {
+      return pokemon.copyWith(
+        isFavorite: favoriteIdsSet.contains(pokemon.id),
+      );
+    }).toList();
+  }
 }

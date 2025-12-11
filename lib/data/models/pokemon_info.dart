@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import 'pokemon_move.dart';
+
 /// Pokemon type with color mapping
 class PokemonType {
   final int slot;
@@ -118,6 +120,8 @@ class PokemonInfo {
   final int baseExperience;
   final List<PokemonType> types;
   final List<PokemonStat> stats;
+  final List<PokemonMove> moves;
+  final String? evolutionChainUrl;  // 进化链 URL（需要从 species API 获取）
 
   PokemonInfo({
     required this.id,
@@ -127,6 +131,8 @@ class PokemonInfo {
     required this.baseExperience,
     required this.types,
     required this.stats,
+    this.moves = const [],
+    this.evolutionChainUrl,
   });
 
   /// Get formatted ID string (e.g., #001)
@@ -181,6 +187,22 @@ class PokemonInfo {
     return types.first.color;
   }
 
+  /// 获取按等级排序的技能列表（只显示通过升级学会的）
+  List<PokemonMove> get levelUpMoves {
+    return moves
+        .where((move) => move.learnLevel != null)
+        .toList()
+      ..sort((a, b) => a.learnLevel!.compareTo(b.learnLevel!));
+  }
+
+  /// 获取进化链 ID
+  int? get evolutionChainId {
+    if (evolutionChainUrl == null) return null;
+    final uri = Uri.parse(evolutionChainUrl!);
+    final segments = uri.pathSegments.where((s) => s.isNotEmpty).toList();
+    return int.tryParse(segments.last);
+  }
+
   factory PokemonInfo.fromJson(Map<String, dynamic> json) {
     return PokemonInfo(
       id: json['id'] as int,
@@ -194,6 +216,12 @@ class PokemonInfo {
       stats: (json['stats'] as List)
           .map((e) => PokemonStat.fromJson(e as Map<String, dynamic>))
           .toList(),
+      moves: json['moves'] != null
+          ? (json['moves'] as List)
+              .map((e) => PokemonMove.fromJson(e as Map<String, dynamic>))
+              .toList()
+          : [],
+      evolutionChainUrl: json['evolution_chain_url'] as String?,
     );
   }
 
@@ -206,12 +234,17 @@ class PokemonInfo {
       'base_experience': baseExperience,
       'types': jsonEncode(types.map((e) => e.toJson()).toList()),
       'stats': jsonEncode(stats.map((e) => e.toJson()).toList()),
+      'moves': jsonEncode(moves.map((e) => e.toJson()).toList()),
+      'evolution_chain_url': evolutionChainUrl,
     };
   }
 
   factory PokemonInfo.fromDb(Map<String, dynamic> map) {
     final typesJson = jsonDecode(map['types'] as String) as List;
     final statsJson = jsonDecode(map['stats'] as String) as List;
+    final movesJson = map['moves'] != null
+        ? jsonDecode(map['moves'] as String) as List
+        : <dynamic>[];
 
     return PokemonInfo(
       id: map['id'] as int,
@@ -231,6 +264,18 @@ class PokemonInfo {
                 baseStat: e['baseStat'] as int,
               ))
           .toList(),
+      moves: movesJson
+          .map((e) => PokemonMove(
+                name: e['name'] as String,
+                learnMethods: (e['learnMethods'] as List)
+                    .map((m) => MoveLearnMethod(
+                          name: m['name'] as String,
+                          level: m['level'] as int,
+                        ))
+                    .toList(),
+              ))
+          .toList(),
+      evolutionChainUrl: map['evolution_chain_url'] as String?,
     );
   }
 }

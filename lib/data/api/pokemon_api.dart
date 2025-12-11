@@ -59,7 +59,17 @@ class PokemonApi {
   Future<PokemonInfo> fetchPokemonInfo(String name) async {
     try {
       final response = await _dio.get('/pokemon/$name');
-      return PokemonInfo.fromJson(response.data as Map<String, dynamic>);
+      final data = response.data as Map<String, dynamic>;
+
+      // 调试：打印 moves 数据
+      final movesData = data['moves'] as List?;
+      print('API Response for $name - moves count: ${movesData?.length ?? 0}');
+
+      final pokemonInfo = PokemonInfo.fromJson(data);
+      print('Parsed PokemonInfo for $name - moves count: ${pokemonInfo.moves.length}');
+      print('Level-up moves count: ${pokemonInfo.levelUpMoves.length}');
+
+      return pokemonInfo;
     } on DioException catch (e) {
       throw _handleError(e);
     }

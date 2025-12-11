@@ -132,57 +132,102 @@ class _PokemonCardState extends ConsumerState<PokemonCard> {
             ),
           ],
         ),
-        // Column 类似 Compose 的 Column
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        // Stack 用于叠加收藏按钮在卡片右上角
+        child: Stack(
           children: [
-            // Hero 动画：共享元素转场
-            // 类似 Android Shared Element Transition
-            // 或 Compose 的 SharedTransitionLayout
-            //
-            // 原理：
-            // 1. 列表页和详情页有相同 tag 的 Hero Widget
-            // 2. 页面切换时，Flutter 会自动将图片从列表位置动画到详情页位置
-            Hero(
-              tag: 'pokemon-image-${widget.pokemon.id}',  // 唯一标识
-              // CachedNetworkImage: 网络图片缓存库
-              // 类似 Android 的 Glide/Coil
-              child: CachedNetworkImage(
-                imageUrl: widget.pokemon.imageUrl,
-                width: 120,
-                height: 120,
-                fit: BoxFit.contain,  // 类似 Android ScaleType.FIT_CENTER
-                // 加载中占位
-                placeholder: (context, url) => const SizedBox(
-                  width: 120,
-                  height: 120,
-                  child: Center(
-                    child: CircularProgressIndicator(strokeWidth: 2),
+            // 原有的卡片内容 - 使用 Center 确保内容居中
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                // Hero 动画：共享元素转场
+                // 类似 Android Shared Element Transition
+                // 或 Compose 的 SharedTransitionLayout
+                //
+                // 原理：
+                // 1. 列表页和详情页有相同 tag 的 Hero Widget
+                // 2. 页面切换时，Flutter 会自动将图片从列表位置动画到详情页位置
+                Hero(
+                  tag: 'pokemon-image-${widget.pokemon.id}',  // 唯一标识
+                  // CachedNetworkImage: 网络图片缓存库
+                  // 类似 Android 的 Glide/Coil
+                  child: CachedNetworkImage(
+                    imageUrl: widget.pokemon.imageUrl,
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.contain,  // 类似 Android ScaleType.FIT_CENTER
+                    // 加载中占位
+                    placeholder: (context, url) => const SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: Center(
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                    // 加载失败占位
+                    errorWidget: (context, url, error) => const SizedBox(
+                      width: 120,
+                      height: 120,
+                      child: Icon(Icons.error_outline, size: 40),
+                    ),
                   ),
                 ),
-                // 加载失败占位
-                errorWidget: (context, url, error) => const SizedBox(
-                  width: 120,
-                  height: 120,
-                  child: Icon(Icons.error_outline, size: 40),
+                const SizedBox(height: 8),
+                // Pokemon 名称也参与 Hero 动画
+                Hero(
+                  tag: 'pokemon-name-${widget.pokemon.id}',
+                  // Material Widget 用于保持文本样式在动画中的一致性
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Text(
+                      widget.pokemon.displayName,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
                 ),
+              ],
               ),
             ),
-            const SizedBox(height: 8),
-            // Pokemon 名称也参与 Hero 动画
-            Hero(
-              tag: 'pokemon-name-${widget.pokemon.id}',
-              // Material Widget 用于保持文本样式在动画中的一致性
-              child: Material(
-                color: Colors.transparent,
-                child: Text(
-                  widget.pokemon.displayName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                ),
+            // 收藏按钮（右上角）
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Consumer(
+                builder: (context, ref, child) {
+                  final favoriteNotifier = ref.watch(favoriteProvider.notifier);
+                  final isFavorite = ref.watch(favoriteProvider
+                      .select((state) => state.favoriteIds.contains(widget.pokemon.id)));
+
+                  return GestureDetector(
+                    onTap: () {
+                      // 阻止点击事件冒泡到卡片
+                      favoriteNotifier.toggleFavorite(widget.pokemon.id, widget.pokemon.name);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.red : Colors.grey.shade600,
+                        size: 18,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],

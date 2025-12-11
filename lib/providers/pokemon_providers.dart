@@ -254,3 +254,119 @@ final pokemonInfoProvider = FutureProvider.family<PokemonInfo, String>(
 /// val colors = remember(pokemonId) { mutableStateOf<Color?>(null) }
 final pokemonColorProvider =
     StateProvider.family<Color?, int>((ref, pokemonId) => null);
+
+// ==================== 收藏功能状态管理 ====================
+
+/// 收藏功能的 UI 状态
+///
+/// 类似 Android ViewModel 中的 UiState data class
+class FavoriteState {
+  final Set<int> favoriteIds;   // 收藏的 Pokemon ID 集合（用于快速查找）
+  final List<Pokemon> favorites; // 收藏的 Pokemon 列表（用于显示）
+  final bool isLoading;          // 加载状态
+  final String? error;           // 错误信息
+
+  const FavoriteState({
+    this.favoriteIds = const {},
+    this.favorites = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  /// 创建新状态（不可变数据）
+  FavoriteState copyWith({
+    Set<int>? favoriteIds,
+    List<Pokemon>? favorites,
+    bool? isLoading,
+    String? error,
+  }) {
+    return FavoriteState(
+      favoriteIds: favoriteIds ?? this.favoriteIds,
+      favorites: favorites ?? this.favorites,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+    );
+  }
+}
+
+/// 收藏功能的状态管理器
+///
+/// 类似 Android ViewModel，负责:
+/// 1. 管理收藏状态
+/// 2. 处理添加/移除收藏的业务逻辑
+/// 3. 更新状态并通知 UI 刷新
+class FavoriteNotifier extends StateNotifier<FavoriteState> {
+  final PokemonRepository _repository;
+
+  /// 构造函数，初始化时自动加载收藏列表
+  FavoriteNotifier(this._repository) : super(const FavoriteState()) {
+    loadFavorites();
+  }
+
+  /// 加载收藏列表
+  ///
+  /// 从数据库获取所有收藏的 Pokemon
+  Future<void> loadFavorites() async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final favoriteIds = await _repository.getFavoritePokemonIds();
+      final favorites = await _repository.getFavoritePokemonList();
+
+      state = state.copyWith(
+        favoriteIds: favoriteIds.toSet(),
+        favorites: favorites,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// 切换收藏状态
+  ///
+  /// 如果已收藏则移除，未收藏则添加
+  /// [pokemonId] Pokemon ID
+  /// [pokemonName] Pokemon 名称
+  Future<void> toggleFavorite(int pokemonId, String pokemonName) async {
+    try {
+      await _repository.toggleFavorite(pokemonId, pokemonName);
+
+      // 更新本地状态
+      final newFavoriteIds = Set<int>.from(state.favoriteIds);
+      if (newFavoriteIds.contains(pokemonId)) {
+        newFavoriteIds.remove(pokemonId);
+      } else {
+        newFavoriteIds.add(pokemonId);
+      }
+
+      state = state.copyWith(favoriteIds: newFavoriteIds);
+
+      // 重新加载收藏列表以获取完整信息
+      await loadFavorites();
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  /// 检查是否已收藏
+  ///
+  /// [pokemonId] Pokemon ID
+  bool isFavorite(int pokemonId) {
+    return state.favoriteIds.contains(pokemonId);
+  }
+}
+
+/// 收藏功能 Provider（全局状态）
+///
+/// UI 通过 ref.watch(favoriteProvider) 监听状态变化
+/// 类似 Compose 中的:
+/// val favoriteState by viewModel.favoriteState.collectAsState()
+final favoriteProvider =
+    StateNotifierProvider<FavoriteNotifier, FavoriteState>((ref) {
+  final repository = ref.watch(pokemonRepositoryProvider);
+  return FavoriteNotifier(repository);
+});
